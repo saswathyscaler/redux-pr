@@ -24,8 +24,7 @@ const Dashboard = () => {
 
   
   let dashboardData = useSelector((state) => state.dashboard.items);
-  // console.log("🚀 ~ file: Dashboard.js:27 ~ Dashboard ~ dashboardData:", dashboardData)
-  console.log(dashboardData.length)
+ 
   
   const columnConfig = [
     { key: "hasNewEvents", displayName: "", width: "0%" },
@@ -101,29 +100,28 @@ const Dashboard = () => {
     hasNewEvents: p.lastVersionSeen < p.latestVersion,
   }));
   
-// console.log(allProjectsData,"allProjectsDataallProjectsData")
-// console.log(allProjects,"allProjects.........")
-console.log(dashboardData.length,"before,...........")
 
-dashboardData = filteredProjects.sort(
-  objSort(sortedBy.key, sortedBy.asc)
-  );
-  console.log("A dashboardData:", dashboardData)
-  console.log(dashboardData.length,"before,...........")
+
+
   
   const q = searchQuery.trim().toLowerCase();
   if (!!q) {
-    filteredProjects = allProjectsData.filter((p) =>
+    filteredProjects = dashboardData.filter((p) =>
       [p.name, p.num].some((_p) => (_p || "").toLowerCase().includes(q))
     );
   }
-  // const sortedProjects = filteredProjects.sort(
-  //   objSort(sortedBy.key, sortedBy.asc)
-  // );
 
+  const sortedProjects = filteredProjects.sort(
+    objSort(sortedBy.key, sortedBy.asc)
+  );
+  
+  dashboardData = filteredProjects.sort(
+    objSort(sortedBy.key, sortedBy.asc)
+    );
+  console.log("Dashboard ", dashboardData)
 
     
-  const noMatches = !filteredProjects.length && !!projects.length;
+  const noMatches = !filteredProjects.length && !!dashboardData.length;
 
   useEffect(() => {
     refreshData();
@@ -166,7 +164,6 @@ dashboardData = filteredProjects.sort(
         onSearch={(e) => { setSearchQuery(e.target.value) }}
         onClickNewProject={toggleShowNewProjectModal}
       />
-      {console.log(dashboardData,"000000020.203321213021.135120")}
       <main className="min-h-screen p-1 md:p-4 lg:p-5 bg-blueGray-100">
         <section className="overflow-x-auto bg-blueGray-100 shadow-sm">
           {loading ? (
@@ -299,3 +296,4 @@ const LoadingPhantomTable = () => (
 );
 
 export default Dashboard;
+

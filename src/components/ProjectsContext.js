@@ -37,68 +37,66 @@ export const ProjectsContextProvider = ({ children }) => {
   const dashboardData = useSelector((state) => state.dashboard.items);
 
 
-
-
-  // const refreshData = (page = 1) => {
-  //   if (isLoaded) {
-  //     setProjects(dashboardData);
-  //     setTotalPages(totalPages);
-  //     setCurrentPage(page > totalPages ? 1 : page);
-  //     setLoading(false);
-  //   } else {
-  //     const onSuccess = (response) => {
-  //       const { data, totalPages } = response;
-  //       setProjects(data);
-  //       // dispatch(setPrjcts(data)); 
-  //       setTotalPages(totalPages);
-  //       setCurrentPage(page > totalPages ? 1 : page);
-  //       setLoading(false);
-  //     };
-  //     const onError = (err) => {
-  //       showErrorToast(err);
-  //       setLoading(false);
-  //     };
-
-
-  //     if (projectsPerPage === "All") {
-  //       get(
-  //         `/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`,
-  //         onSuccess,
-  //         onError
-  //       );
-  //     } else {
-  //       get(
-  //         `/api/projects?page=${page}&projectsPerPage=${
-  //           projectsPerPage === "" ? 20 : projectsPerPage
-  //         }&complete=${showComplete}`,
-  //         onSuccess,
-  //         onError
-  //       );
-  //     }
-  //   }
-  // };
-
-
   const refreshData = (page = 1) => {
-    const onSuccess = (response) => {
-      const { data, totalPages } = response;
-      setProjects(data);
-    //  dispatch(setPrjcts(data));
+    if (isLoaded) {
+      setProjects(dashboardData);
       setTotalPages(totalPages);
       setCurrentPage(page > totalPages ? 1 : page);
       setLoading(false);
-    };
-    const onError = (err) => {
-      showErrorToast(err);
-      setLoading(false);
-    };
-
-    if (projectsPerPage === "All") {
-      get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
     } else {
-      get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
-    } 
+      const onSuccess = (response) => {
+        const { data, totalPages } = response;
+        setProjects(data);
+        // dispatch(setPrjcts(data)); 
+        setTotalPages(totalPages);
+        setCurrentPage(page > totalPages ? 1 : page);
+        setLoading(false);
+      };
+      const onError = (err) => {
+        showErrorToast(err);
+        setLoading(false);
+      };
+
+
+      if (projectsPerPage === "All") {
+        get(
+          `/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`,
+          onSuccess,
+          onError
+        );
+      } else {
+        get(
+          `/api/projects?page=${page}&projectsPerPage=${
+            projectsPerPage === "" ? 20 : projectsPerPage
+          }&complete=${showComplete}`,
+          onSuccess,
+          onError
+        );
+      }
+    }
   };
+
+
+  // const refreshData = (page = 1) => {
+  //   const onSuccess = (response) => {
+  //     const { data, totalPages } = response;
+  //     setProjects(data);
+  //   //  dispatch(setPrjcts(data));
+  //     setTotalPages(totalPages);
+  //     setCurrentPage(page > totalPages ? 1 : page);
+  //     setLoading(false);
+  //   };
+  //   const onError = (err) => {
+  //     showErrorToast(err);
+  //     setLoading(false);
+  //   };
+
+  //   if (projectsPerPage === "All") {
+  //     get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
+  //   } else {
+  //     get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
+  //   } 
+  // };
 
   const getAllProject = () => {
     if (isLoaded) {
@@ -128,22 +126,33 @@ useEffect(() => {
 }, [showComplete]);
 
 
-  const submitNewProject = (newProjectData, callback) => {
-    const onSuccess = (newProject) => {
-      setProjects((prev) => [newProject, ...prev]);
-      if (callback) callback();
-    };
-    const onError = (err) => {
-      showErrorToast(err);
-      if (callback) callback();
-    };
 
-    post(`/api/projects`, newProjectData, onSuccess, onError);
-    setTimeout(() => refreshData(), 1000);
+// * TODO: store newly added projects to the store 
+
+const submitNewProject = (newProjectData, callback) => {
+  const onSuccess = (newProject) => {
+    setProjects((prev) => [newProject, ...prev]);
+    dispatch(setPrjcts([...dashboardData, newProject]));
+
+    if (callback) callback();
   };
+  const onError = (err) => {
+    showErrorToast(err);
+    if (callback) callback();
+  };
+  
+  post(`/api/projects`, newProjectData, onSuccess, onError);
+  setTimeout(() => refreshData(), 1000);
+};
+
+// * TODO: remove archieved projects from the store 
 
   const deleteProject = (projects, callback) => {
     const onSuccess = (newProject) => {
+      const updatedProjects = projects.filter((project) => !projects.includes(project));
+      setProjects(updatedProjects);
+      dispatch(setPrjcts(updatedProjects));
+
       if (callback) callback();
     };
     const onError = (err) => {
