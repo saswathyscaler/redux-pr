@@ -50,9 +50,9 @@ export const ProjectsContextProvider = ({ children }) => {
     } else {
       const onSuccess = (response) => {
         const { data, totalPages } = response;
-        setProjects(data);
+        // setProjects(data);
         // dispatch(setPrjcts(data)); 
-        dispatch(setProjectsInAPage(data))
+        // dispatch(setProjectsInAPage(data))
 
         setTotalPages(totalPages);
         setCurrentPage(page > totalPages ? 1 : page);
@@ -65,22 +65,15 @@ export const ProjectsContextProvider = ({ children }) => {
 
 
       if (projectsPerPage === "All") {
-        get(
-          `/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`,
-          onSuccess,
-          onError
-        );
+        get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);;
       } else {
-        get(
-          `/api/projects?page=${page}&projectsPerPage=${
-            projectsPerPage === "" ? 20 : projectsPerPage
-          }&complete=${showComplete}`,
-          onSuccess,
-          onError
-        );
+        get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
       }
     }
   };
+
+
+
 
 
   // const refreshData = (page = 1) => {
@@ -138,7 +131,7 @@ useEffect(() => {
 
 const submitNewProject = (newProjectData, callback) => {
   const onSuccess = (newProject) => {
-    setProjects((prev) => [newProject, ...prev]);
+    // setProjects((prev) => [newProject, ...prev]);
     dispatch(setPrjcts([...dashboardData, newProject]));
 
     if (callback) callback();
