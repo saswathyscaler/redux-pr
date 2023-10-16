@@ -3,7 +3,7 @@ import { FeedbackContext } from "../../shared/contexts/FeedbackContext";
 
 import { get, post, $delete } from "../../util/axios";
 import { useDispatch,useSelector } from "react-redux";
-import { setPrjcts } from "dashboard/features/dashboardSlice";
+import { setPrjcts,removePrjct } from "dashboard/features/dashboardSlice";
 import { setProjectsInAPage } from "dashboard/features/paginationSlice";
 
 export const ProjectsContext = React.createContext({
@@ -155,7 +155,9 @@ const submitNewProject = (newProjectData, callback) => {
 // * TODO: remove archieved projects from the store 
 
   const deleteProject = (projects, callback) => {
+    console.log("🚀  ~ projects:", projects)
     const onSuccess = (newProject) => {
+      dispatch(removePrjct(projects))
       if (callback) callback();
     };
     const onError = (err) => {

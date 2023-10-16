@@ -1,196 +1,300 @@
-import React, { useState, useEffect, useContext } from "react";
-import { FeedbackContext } from "../../shared/contexts/FeedbackContext";
+import React, { useState, useContext, useEffect } from "react";
+import { useHistory } from "react-router-dom";
+import { objSort, formatDate } from "gmi-utils";
+import { ArchiveIcon } from "@heroicons/react/outline";
+import { ProjectsContext } from "../contexts/ProjectsContext";
+import { AuthContext } from "../../shared/contexts/AuthContext";
+import Subheader from "./Subheader";
+import NewProjectModal from "./NewProjectModal";
+import ArchivedModal from "./ArchivedModal";
+import { Table, Row, Cell } from "../../shared/components/Table/Table";
+import Pagination from "./Pagination";
+import {  useSelector } from "react-redux";
 
-import { get, post, $delete } from "../../util/axios";
-import { useDispatch,useSelector } from "react-redux";
-import { setPrjcts,removePrjct } from "dashboard/features/dashboardSlice";
-import { setProjectsInAPage } from "dashboard/features/paginationSlice";
+const Dashboard = () => {
+  const history = useHistory();
+  const { projects, allProjects, loading, load, totalPages, currentPage, projectsPerPage, deleteProject, refreshData, getAllProject} = useContext(ProjectsContext);
+  const { user } = useContext(AuthContext);
+  const [showArchivedModal, setShowArchivedModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [sortedBy, setSortedBy] = useState({ key: "name", asc: true });
+  const [projectId, setProjectId] = useState("");
+  const clearSearch = () => setSearchQuery("");
 
-export const ProjectsContext = React.createContext({
-  allProjects:[],
-  projects: [],
-  loading: true,
-  load: true,
-  totalPages: 0,
-  currentPage: 1,
-  projectsPerPage: "",
-  showComplete:"",
-  submitNewProject: () => {},
-  deleteProject: () => {},
-  refreshData: () => {},
-  getAllProject:()=>{},
-});
+  
+  let dashboardData = useSelector((state) => state.dashboard.items);
+ 
+  
+  const columnConfig = [
+    { key: "hasNewEvents", displayName: "", width: "0%" },
+    { key: "num", displayName: "Project Code", width: "14%", sortable: true },
+    { key: "name", displayName: "Name", width: "32%", sortable: true },
+    // { key: "userProjectRole", displayName: "Permissions", width: "12%" },
+    { key: "sheetCount", displayName: "Sheets",width: "12%", sortable: true },
+    { key: "teamSize", displayName: "Team", width: "12%", sortable: true },
+    { key: "status", displayName: "Status", width: "12%", sortable: true },
+    { key: "updatedAt", displayName: "Last Updated", width: "17%", sortable: true },
+  ];
 
-export const ProjectsContextProvider = ({ children }) => {
-  const { showErrorToast } = useContext(FeedbackContext);
+  if (user.humanizedRole === "Super Admin") {
+    columnConfig.push({ key: "archived", displayName: "Archive", width: "12%" });
+  }
 
-  const [loading, setLoading] = useState(true);
-  const [load, setLoad] = useState(true);
-  const [projects, setProjects] = useState([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [projectsPerPage, setProjectsPerPage] = useState("");
-  const [showComplete,setShowComplete]=useState("")
-  const [allProjects, setAllProjects] = useState([])
-
-  const dispatch = useDispatch();
-  const isLoaded = useSelector((state) => state.dashboard.isLoaded);
-  const dashboardData = useSelector((state) => state.dashboard.items);
-
-  const projectsPPage = useSelector((state)=>state.pagination.items2)
-  // console.log(projectsPPage,"projects per pge ")
-
-
-  const refreshData = (page = 1) => {
-    if (isLoaded) {
-      setProjects(dashboardData);
-      setTotalPages(totalPages);
-      setCurrentPage(page > totalPages ? 1 : page);
-      setLoading(false);
-    } else {
-      const onSuccess = (response) => {
-        const { data, totalPages } = response;
-        setProjects(data);
-        // dispatch(setPrjcts(data)); 
-        dispatch(setProjectsInAPage(data))
-
-        setTotalPages(totalPages);
-        setCurrentPage(page > totalPages ? 1 : page);
-        setLoading(false);
-      };
-      const onError = (err) => {
-        showErrorToast(err);
-        setLoading(false);
-      };
-
-
-      if (projectsPerPage === "All") {
-        get(
-          `/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`,
-          onSuccess,
-          onError
-        );
-      } else {
-        get(
-          `/api/projects?page=${page}&projectsPerPage=${
-            projectsPerPage === "" ? 20 : projectsPerPage
-          }&complete=${showComplete}`,
-          onSuccess,
-          onError
-        );
-      }
-    }
+  const columnFormatters = {
+    hasNewEvents: (hasNewEvents) =>
+      hasNewEvents ? (
+        <div className="relative h-full w-0">
+          <div className="absolute top-2 right-1 bg-blue-400 h-2 w-2 flex items-center justify-center rounded-full" />{" "}
+        </div>
+      ) : (
+        ""
+      ),
+    userProjectRole: (str) => (
+      <span className="capitalize">
+        {str === "project admin" ? "Admin" : str}
+      </span>
+    ),
+    updatedAt: (date) => <span>{formatDate(date)}</span>,
+    default: (val) => (
+      <span className="block truncate">{val === 0 || val ? val : "-"}</span>
+    ),
   };
 
+  let filteredProjects = dashboardData.map((p) => ({
+    id: p.id,
+    num: p.num,
+    name: p.name,
+    sheetCount: (p.Sheets || []).length ,
+    teamSize: (p.userCount || []),
+    status: p.status,
+    updatedAt: p.updatedAt || Date.now(), // Date.now() is temp fix, p.updatedAt doesn't exist when new project is added
+    hasNewEvents: p.lastVersionSeen < p.latestVersion,
+  }));
+  // console.log("🚀 filteredProjects:", filteredProjects)
 
-  // const refreshData = (page = 1) => {
-  //   const onSuccess = (response) => {
-  //     const { data, totalPages } = response;
-  //     setProjects(data);
-  //   //  dispatch(setPrjcts(data));
-  //     setTotalPages(totalPages);
-  //     setCurrentPage(page > totalPages ? 1 : page);
-  //     setLoading(false);
-  //   };
-  //   const onError = (err) => {
-  //     showErrorToast(err);
-  //     setLoading(false);
-  //   };
+  columnConfig.forEach((col) => (col.sortBy = col.key === sortedBy.key));
 
-  //   if (projectsPerPage === "All") {
-  //     get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
-  //   } else {
-  //     get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
-  //   } 
-  // };
+  const onClickSort = (colKey) => {
+    if (sortedBy.key === colKey)
+      return setSortedBy((prev) => ({ ...prev, asc: !prev.asc }));
+    return setSortedBy({ key: colKey, asc: true });
+  };
 
-  const getAllProject = () => {
-    if (isLoaded) {
-      return;
-      
-    }
-    setLoad(true);
-    const onSuccess = (projects) => {
-      setAllProjects(projects.data);
-      dispatch(setPrjcts(projects.data));
-      // console.log(projects.data ,"projects.data")
-      setLoad(false);
-    };
-    const onError = (err) => {
-      showErrorToast(err);
-      setLoad(false);
-    };
-    get(
-      `/api/projects?projectsPerPage=All&complete=${showComplete}`,
-      onSuccess,
-      onError
+  const toggleShowNewProjectModal = () => {
+    setShowNewProjectModal(!showNewProjectModal);
+  };
+
+  useEffect(() => {
+    getAllProject()
+  }, []);
+
+
+  let allProjectsData = dashboardData.map((p) => ({
+    id: p.id,
+    num: p.num,
+    name: p.name,
+    sheetCount: (p.Sheets || []).length,
+    teamSize: (p.Users || []).length,
+    status: p.status,
+    updatedAt: p.updatedAt || Date.now(),
+    hasNewEvents: p.lastVersionSeen < p.latestVersion,
+  }));
+  
+  
+  const q = searchQuery.trim().toLowerCase();
+  if (!!q) {
+    filteredProjects = dashboardData.filter((p) =>
+      [p.name, p.num].some((_p) => (_p || "").toLowerCase().includes(q))
     );
-  };
+  }
+
   
-useEffect(() => {
-  getAllProject();
-  refreshData(currentPage);
-}, [showComplete]);
-
-
-
-// * TODO: store newly added projects to the store 
-
-const submitNewProject = (newProjectData, callback) => {
-  const onSuccess = (newProject) => {
-    setProjects((prev) => [newProject, ...prev]);
-    dispatch(setPrjcts([...dashboardData, newProject]));
-
-    if (callback) callback();
-  };
-  const onError = (err) => {
-    showErrorToast(err);
-    if (callback) callback();
-  };
+  const sortedProjects = filteredProjects.sort(
+    objSort(sortedBy.key, sortedBy.asc)
+  );
+  // console.log(sortedProjects,"sortedProjects............")
+  // console.log("Dashboard ...................", dashboardData.length)
   
-  post(`/api/projects`, newProjectData, onSuccess, onError);
-  setTimeout(() => refreshData(), 1000);
-};
+  // dashboardData = filteredProjects.sort(
+  //   objSort(sortedBy.key, sortedBy.asc)
+  //   );
 
-// * TODO: remove archieved projects from the store 
+  // console.log("Dashboard ", dashboardData.length)
 
-  const deleteProject = (projects, callback) => {
-    console.log("🚀  ~ projects:", projects)
-    const onSuccess = (newProject) => {
-      dispatch(removePrjct(projects))
-      if (callback) callback();
+    
+  const noMatches = !filteredProjects.length && !!dashboardData.length;
+
+  useEffect(() => {
+    refreshData();
+  }, [projectsPerPage]);
+
+  const handleDeleteProject = () => {
+    const callback = () => {
+      setShowArchivedModal(false);
     };
-    const onError = (err) => {
-      showErrorToast(err);
-      if (callback) callback();
-    };
-
-    $delete(`/api/admin/project/archive`, { data: projects }, onSuccess, onError);
-    refreshData(currentPage);
-  }; 
-
-  const contextVal = {
-    allProjects,
-    projects,
-    loading,
-    load,
-    totalPages,
-    currentPage,
-    projectsPerPage,
-    showComplete,
-    setShowComplete,
-    setTotalPages,
-    setProjectsPerPage,
-    submitNewProject,
-    deleteProject,
-    refreshData,
-    getAllProject,
+    deleteProject(projectId, callback);
+    if (projects.length === 1 && currentPage > 1) {
+      goToPage(currentPage - 1);
+    } else {
+      refreshData(currentPage);
+      getAllProject(allProjects);
+    }
   };
+
+  const goToNextPage = () => {
+    goToPage(currentPage + 1);
+  };
+
+  const goToPreviousPage = () => {
+    goToPage(currentPage - 1);
+  };
+
+  const goToPage = (page) => {
+    refreshData(page);
+  };
+  const onChangeShow=()=>{
+    setShowCompletedProjects(!showCompletedProjects)
+  }
 
   return (
-    <ProjectsContext.Provider value={contextVal}>
-      {children}
-    </ProjectsContext.Provider>
+    <>
+      <Subheader
+        searchValue={searchQuery}
+        projects={dashboardData}
+        clearSearch={clearSearch}
+        onSearch={(e) => { setSearchQuery(e.target.value) }}
+        onClickNewProject={toggleShowNewProjectModal}
+      />
+      <main className="min-h-screen p-1 md:p-4 lg:p-5 bg-blueGray-100">
+        <section className="overflow-x-auto bg-blueGray-100 shadow-sm">
+          {loading ? (
+            <LoadingPhantomTable />
+          ) : (
+            <Table
+              columnHeaderDetails={columnConfig}
+              onClickSort={onClickSort}
+              ascending={sortedBy.asc}
+            >
+              {sortedProjects.map((project) => (
+                <Row
+                  key={project.id}
+                  className="bg-white cursor-pointer hover:bg-blueGray-50"
+                  onClick={() => {
+                    history.push(`/projects/${project.id}/dashboard/sheets`);
+                    setProjectId(project.id);
+                  }}
+                >
+                  {columnConfig.map((col) => {
+                    if (col.key === "name")
+                      return (
+                        <Cell
+                          key={col.key}
+                          width={col.width}
+                          className="text-gray-500"
+                        >
+                          <div className="w-full">
+                            <div className="font-semibold">{project.name}</div>
+                            {project.formattedAddress && (
+                              <div className="pr-1 mt-1 text-sm font-normal truncate">
+                                {project.formattedAddress}
+                              </div>
+                            )}
+                          </div>
+                        </Cell>
+                      );
+                    if (col.key === "archived") {
+                      return (
+                        <Cell
+                          key={col.key}
+                          width={col.width}
+                          className="text-gray-500"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowArchivedModal(true);
+                            setProjectId(project.id);
+                          }}
+                        >
+                          {/* {user.humanizedRole === "Super Admin" && ( */}
+
+                          <button>
+                            <ArchiveIcon className="hover:text-red-700 w-5 h-5 mr-1.5" />
+                          </button>
+                          {/* )} */}
+                        </Cell>
+                      );
+                    }
+                    return (
+                      <Cell
+                        key={col.key}
+                        width={col.width}
+                        className="text-sm font-normal text-gray-500"
+                      >
+                        {columnFormatters[col.key]
+                          ? columnFormatters[col.key](project[col.key])
+                          : columnFormatters.default(project[col.key])}
+                      </Cell>
+                    );
+                  })}
+                </Row>
+              ))}
+              {noMatches ? (
+                load ? (
+                  <LoadingPhantomTable />
+                ) : (
+                  <Row className="bg-white">
+                    <div className="py-2 px-12 text-sm font-medium text-gray-500 tracking-wide">
+                      No Matches
+                    </div>
+                  </Row>
+                )
+              ) : null}
+            </Table>
+          )}
+        </section>
+        {projectsPerPage !== "All" && totalPages !== 0 && !q && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            goToPage={goToPage}
+            goToNextPage={goToNextPage}
+            goToPreviousPage={goToPreviousPage}
+          />
+        )}
+      </main>
+      {showNewProjectModal && (
+        <NewProjectModal onClose={toggleShowNewProjectModal} />
+      )}
+      {showArchivedModal && (
+        <ArchivedModal
+          show={showArchivedModal}
+          onClose={() => setShowArchivedModal(false)}
+          onConfirm={handleDeleteProject}
+        />
+      )}
+    </>
   );
 };
 
+const LoadingPhantomTable = () => (
+  <div
+    className="w-full h-full flex items-center justify-center rounded border border-blueGray-100 bg-blueGray-200"
+    style={{ minHeight: 800 }}
+  >
+    <div className="animate-pulse w-full h-full">
+      <div className="w-full h-14 bg-blueGray-100 bg-opacity-50 px-2" />
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className="w-full h-12 bg-blueGray-100 flex items-center space-x-0.5 py-1 px-6"
+        >
+          <div className="rounded w-5/12 h-full bg-blueGray-200 bg-opacity-40" />
+          <div className="rounded w-3/12 h-full bg-blueGray-200 bg-opacity-40" />
+          <div className="rounded w-4/12 h-full bg-blueGray-200 bg-opacity-40" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export default Dashboard;
