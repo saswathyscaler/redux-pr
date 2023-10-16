@@ -4,6 +4,7 @@ import { FeedbackContext } from "../../shared/contexts/FeedbackContext";
 import { get, post, $delete } from "../../util/axios";
 import { useDispatch,useSelector } from "react-redux";
 import { setPrjcts } from "dashboard/features/dashboardSlice";
+import { setProjectsInAPage } from "dashboard/features/paginationSlice";
 
 export const ProjectsContext = React.createContext({
   allProjects:[],
@@ -36,6 +37,9 @@ export const ProjectsContextProvider = ({ children }) => {
   const isLoaded = useSelector((state) => state.dashboard.isLoaded);
   const dashboardData = useSelector((state) => state.dashboard.items);
 
+  const projectsPPage = useSelector((state)=>state.pagination.items2)
+  // console.log(projectsPPage,"projects per pge ")
+
 
   const refreshData = (page = 1) => {
     if (isLoaded) {
@@ -48,6 +52,8 @@ export const ProjectsContextProvider = ({ children }) => {
         const { data, totalPages } = response;
         setProjects(data);
         // dispatch(setPrjcts(data)); 
+        dispatch(setProjectsInAPage(data))
+
         setTotalPages(totalPages);
         setCurrentPage(page > totalPages ? 1 : page);
         setLoading(false);
@@ -107,6 +113,7 @@ export const ProjectsContextProvider = ({ children }) => {
     const onSuccess = (projects) => {
       setAllProjects(projects.data);
       dispatch(setPrjcts(projects.data));
+      // console.log(projects.data ,"projects.data")
       setLoad(false);
     };
     const onError = (err) => {
@@ -149,10 +156,6 @@ const submitNewProject = (newProjectData, callback) => {
 
   const deleteProject = (projects, callback) => {
     const onSuccess = (newProject) => {
-      const updatedProjects = projects.filter((project) => !projects.includes(project));
-      setProjects(updatedProjects);
-      dispatch(setPrjcts(updatedProjects));
-
       if (callback) callback();
     };
     const onError = (err) => {
