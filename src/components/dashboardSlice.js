@@ -18,13 +18,10 @@ const dashboardSlice = createSlice({
 
       state.paginate = Array.from({ length: numOfPages }, (_, i) => {
         const start = i * 20;
-        console.log(start,'start')
         const end = (i + 1) * 20;
-        console.log("~ end:", end)
         const projectSlice = action.payload.slice(start, end);
         return projectSlice;
       });
-      console.log(" projectSlice:", projectSlice)
 
       // console.log(state.paginate[0], "paginateee");
 

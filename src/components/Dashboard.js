@@ -1,4 +1,3 @@
-
 import React, { useState, useContext, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { objSort, formatDate } from "gmi-utils";
@@ -25,8 +24,12 @@ const Dashboard = () => {
 
   
   let dashboardData = useSelector((state) => state.dashboard.items);
-  let paginate = useSelector((state) => state.dashboard.paginate);
-  console.log( typeof(paginate[0]))
+  let paginate = useSelector((state) => state.dashboard.paginate[0]);
+
+
+  console.log(paginate,"paginatedd")
+
+  console.log( typeof(paginate),"typsss")
   
   
   const columnConfig = [
@@ -74,7 +77,7 @@ const Dashboard = () => {
     updatedAt: p.updatedAt || Date.now(), // Date.now() is temp fix, p.updatedAt doesn't exist when new project is added
     hasNewEvents: p.lastVersionSeen < p.latestVersion,
   }));
-  // console.log("🚀 filteredProjects:", filteredProjects)
+  console.log("🚀 filteredProjects:", filteredProjects)
 
   columnConfig.forEach((col) => (col.sortBy = col.key === sortedBy.key));
 
@@ -103,11 +106,11 @@ const Dashboard = () => {
     updatedAt: p.updatedAt || Date.now(),
     hasNewEvents: p.lastVersionSeen < p.latestVersion,
   }));
-  
+
   
   const q = searchQuery.trim().toLowerCase();
   if (!!q) {
-    filteredProjects = dashboardData.filter((p) =>
+    filteredProjects = allProjectsData.filter((p) =>
       [p.name, p.num].some((_p) => (_p || "").toLowerCase().includes(q))
     );
   }
@@ -179,7 +182,7 @@ const Dashboard = () => {
               onClickSort={onClickSort}
               ascending={sortedBy.asc}
             >
-              {sortedProjects.map((project) => (
+              {paginate.map((project) => (
                 <Row
                   key={project.id}
                   className="bg-white cursor-pointer hover:bg-blueGray-50"

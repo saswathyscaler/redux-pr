@@ -37,13 +37,13 @@ export const ProjectsContextProvider = ({ children }) => {
   const isLoaded = useSelector((state) => state.dashboard.isLoaded);
   const dashboardData = useSelector((state) => state.dashboard.items);
 
-  // const projectsPPage = useSelector((state)=>state.pagination.items2)
-  // console.log(projectsPPage,"projects per pge ")
+  let paginate = useSelector((state) => state.dashboard.paginate);
+
 
 
   const refreshData = (page = 1) => {
     if (isLoaded) {
-      setProjects(dashboardData);
+      setProjects(paginate);
       setTotalPages(totalPages);
       setCurrentPage(page > totalPages ? 1 : page);
       setLoading(false);
@@ -52,7 +52,6 @@ export const ProjectsContextProvider = ({ children }) => {
         const { data, totalPages } = response;
         // setProjects(data);
         // dispatch(setPrjcts(data)); 
-        // dispatch(setProjectsInAPage(data))
 
         setTotalPages(totalPages);
         setCurrentPage(page > totalPages ? 1 : page);
@@ -65,7 +64,8 @@ export const ProjectsContextProvider = ({ children }) => {
 
 
       if (projectsPerPage === "All") {
-        get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);;
+
+        get(`/api/projects?projectsPerPage=${projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
       } else {
         get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
       }
@@ -80,10 +80,8 @@ export const ProjectsContextProvider = ({ children }) => {
   //   const onSuccess = (response) => {
   //     const { data, totalPages } = response;
   //     setProjects(data);
-  //   //  dispatch(setPrjcts(data));
   //     setTotalPages(totalPages);
   //     setCurrentPage(page > totalPages ? 1 : page);
-  //     setLoading(false);
   //   };
   //   const onError = (err) => {
   //     showErrorToast(err);
