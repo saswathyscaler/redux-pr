@@ -37,7 +37,7 @@ export const ProjectsContextProvider = ({ children }) => {
   const isLoaded = useSelector((state) => state.dashboard.isLoaded);
   const dashboardData = useSelector((state) => state.dashboard.items);
 
-  const projectsPPage = useSelector((state)=>state.pagination.items2)
+  // const projectsPPage = useSelector((state)=>state.pagination.items2)
   // console.log(projectsPPage,"projects per pge ")
 
 
@@ -96,6 +96,8 @@ export const ProjectsContextProvider = ({ children }) => {
   //     get(`/api/projects?page=${page}&projectsPerPage=${projectsPerPage === "" ? 20 : projectsPerPage}&complete=${showComplete}`, onSuccess, onError);
   //   } 
   // };
+
+
 
   const getAllProject = () => {
     if (isLoaded) {

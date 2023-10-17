@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { objSort, formatDate } from "gmi-utils";
@@ -24,7 +25,9 @@ const Dashboard = () => {
 
   
   let dashboardData = useSelector((state) => state.dashboard.items);
- 
+  let paginate = useSelector((state) => state.dashboard.paginate);
+  console.log( typeof(paginate[0]))
+  
   
   const columnConfig = [
     { key: "hasNewEvents", displayName: "", width: "0%" },
